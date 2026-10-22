@@ -57,6 +57,7 @@ let player = null;
 let ui = null;
 let currentChannel = null;
 let toastTimer = null;
+let errorRetries = 0;
 
 // Pull fresh token/keys written by the cron scraper. Falls back to the
 // embedded config above if the file is missing or stale.
@@ -170,8 +171,31 @@ async function initPlayer() {
   player = ui.getControls().getPlayer();
   window.__player = player;
 
+  // Live DASH tuning: sit ~15s behind the live edge (Jio manifests have a
+  // tiny minBufferTime — without this we hover at the edge and rebuffer on
+  // every hiccup), keep a real buffer cushion, and retry segment fetches.
+  player.configure({
+    manifest: { defaultPresentationDelay: 15, dash: { ignoreMinBufferTime: true } },
+    streaming: {
+      bufferingGoal: 20,
+      rebufferingGoal: 4,
+      bufferBehind: 60,
+      jumpLargeGaps: true,
+      retryParameters: { maxAttempts: 6, baseDelay: 500, backoffFactor: 1.5 },
+    },
+    abr: { defaultBandwidthEstimate: 2e6, switchInterval: 6 },
+  });
+
   player.addEventListener("error", (e) => {
-    const code = e.detail && e.detail.code ? e.detail.code : "unknown";
+    const d = e.detail || {};
+    // Recoverable hiccups (segment 404s when the live window slides, transient
+    // network errors) — retry the stream a few times before giving up.
+    if (d.severity === shaka.util.Error.Severity.RECOVERABLE && errorRetries < 4) {
+      errorRetries++;
+      setTimeout(() => player.retryStreaming(), 800 * errorRetries);
+      return;
+    }
+    const code = d.code || "unknown";
     showError(`Playback error (${code}). Tap Retry — the stream token may have expired.`);
   });
 
@@ -226,6 +250,28 @@ async function initPlayer() {
     response.data = shaka.util.StringUtils.toUTF8(text);
   });
 
+  // Stall watchdog: if we sit in the buffering state for >8s, either we
+  // drifted out of the sliding live window (jump back to the edge) or the
+  // network can't sustain a manually-picked quality (hand control to ABR).
+  let stallTimer = null;
+  player.addEventListener("buffering", (e) => {
+    clearTimeout(stallTimer);
+    const buffering = e.buffering !== undefined ? e.buffering : e.detail && e.detail.buffering;
+    if (!buffering) return;
+    stallTimer = setTimeout(() => {
+      if (!player.isBuffering()) return;
+      const r = player.seekRange();
+      if (r.end - video.currentTime > 4) {
+        video.currentTime = r.end - 2;
+        toast("Re-synced to live edge");
+      } else if ($("qualitySelect").value !== "auto") {
+        player.configure({ abr: { enabled: true } });
+        $("qualitySelect").value = "auto";
+        toast("Slow network — switched back to Auto quality");
+      }
+    }, 8000);
+  });
+
   return true;
 }
 
@@ -233,6 +279,7 @@ async function playChannel(id, pushState) {
   const ch = channels.find((c) => c.id === id);
   if (!ch) return;
   currentChannel = ch;
+  errorRetries = 0;
 
   markActive(id);
   hideError();
