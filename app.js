@@ -177,21 +177,39 @@ async function initPlayer() {
   // minBufferTime, so without this we hover at the edge and rebuffer on
   // every hiccup.
   player.configure({
-    manifest: { defaultPresentationDelay: 15, dash: { ignoreMinBufferTime: true } },
+    manifest: {
+      defaultPresentationDelay: 15,
+      retryParameters: { maxAttempts: 4, baseDelay: 500, backoffFactor: 1.5 },
+      dash: { ignoreMinBufferTime: true },
+    },
     streaming: {
       bufferingGoal: 40,
       rebufferingGoal: 2,
       bufferBehind: 60,
       stallSkip: 0.1,
-      jumpLargeGaps: true,
+      returnToEndOfLiveWindowWhenOutside: true,
       retryParameters: { maxAttempts: 6, baseDelay: 500, backoffFactor: 1.5 },
+      // Hold a steady ~15s delay behind the live edge by micro-adjusting
+      // playbackRate (the same trick YouTube uses) instead of stalling when
+      // drift happens. If drift exceeds 40s (window is 62s), jump to the edge.
+      liveSync: {
+        enabled: true,
+        targetLatency: 15,
+        targetLatencyTolerance: 2,
+        maxPlaybackRate: 1.1,
+        minPlaybackRate: 0.95,
+        panicMode: true,
+        panicThreshold: 40,
+      },
     },
     abr: {
+      useNetworkInformation: true,
       defaultBandwidthEstimate: 5e5,
       switchInterval: 4,
       bandwidthDowngradeTarget: 0.95,
       bandwidthUpgradeTarget: 0.65,
-      restrictions: { maxHeight: Math.ceil(screen.height * devicePixelRatio) },
+      restrictToElementSize: true,
+      advanced: { fastHalfLife: 1.5 },
     },
   });
 
