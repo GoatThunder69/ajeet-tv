@@ -5,9 +5,10 @@
    ============================================================ */
 
 // Shared Akamai access token (authenticates all channels below).
-const HDNEA = "__hdnea__=st=1792652401~exp=1792674001~acl=/*~hmac=2c3a3b67acf1da0043dfd5fa8ad2ec24090da5fec6522957f4a25a2d06c08b72";
+// Fallback only — the live token comes from channels.json, refreshed by cron.
+let hdnea = "__hdnea__=st=1792652401~exp=1792674001~acl=/*~hmac=2c3a3b67acf1da0043dfd5fa8ad2ec24090da5fec6522957f4a25a2d06c08b72";
 
-const CHANNELS = [
+const DEFAULT_CHANNELS = [
   {
     id: "so1",
     name: "Sony Ten 1",
@@ -50,10 +51,28 @@ const $ = (id) => document.getElementById(id);
 const video = $("video");
 const container = $("playerContainer");
 
+const PALETTE = ["#7c3aed", "#2563eb", "#0891b2", "#dc2626", "#d97706", "#059669"];
+let channels = DEFAULT_CHANNELS;
 let player = null;
 let ui = null;
 let currentChannel = null;
 let toastTimer = null;
+
+// Pull fresh token/keys written by the cron scraper. Falls back to the
+// embedded config above if the file is missing or stale.
+async function loadConfig() {
+  try {
+    const r = await fetch("channels.json?t=" + Date.now());
+    if (!r.ok) return;
+    const cfg = await r.json();
+    if (!cfg.hdnea || !Array.isArray(cfg.channels) || !cfg.channels.length) return;
+    hdnea = cfg.hdnea;
+    channels = cfg.channels.map((c, i) => {
+      const d = DEFAULT_CHANNELS.find((x) => x.id === c.id) || {};
+      return { meta: "Sports · HD", color: PALETTE[i % PALETTE.length], ...d, ...c };
+    });
+  } catch (_) {}
+}
 
 function toast(msg, ms = 2500) {
   const t = $("toast");
@@ -81,7 +100,7 @@ function hideError() {
 function renderChannels() {
   const list = $("channelList");
   list.innerHTML = "";
-  CHANNELS.forEach((ch) => {
+  channels.forEach((ch) => {
     const btn = document.createElement("button");
     btn.className = "ch-card";
     btn.dataset.id = ch.id;
@@ -127,7 +146,7 @@ async function initPlayer() {
     if (type !== T.MANIFEST && type !== T.SEGMENT) return;
     const u = request.uris[0];
     if (u && u.startsWith("http") && !u.includes("__hdnea__=")) {
-      request.uris[0] = u + (u.includes("?") ? "&" : "?") + HDNEA;
+      request.uris[0] = u + (u.includes("?") ? "&" : "?") + hdnea;
     }
   });
 
@@ -155,7 +174,7 @@ async function initPlayer() {
 }
 
 async function playChannel(id, pushState) {
-  const ch = CHANNELS.find((c) => c.id === id);
+  const ch = channels.find((c) => c.id === id);
   if (!ch) return;
   currentChannel = ch;
 
@@ -249,8 +268,9 @@ setInterval(() => {
 
 /* ---------- Boot ---------- */
 (async () => {
+  await loadConfig();
   renderChannels();
   if (!(await initPlayer())) return;
-  const id = new URLSearchParams(location.search).get("id") || CHANNELS[0].id;
+  const id = new URLSearchParams(location.search).get("id") || channels[0].id;
   playChannel(id, false);
 })();
