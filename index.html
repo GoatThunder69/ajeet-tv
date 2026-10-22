@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AjeetTV — Live</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shaka-player@4/dist/controls.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-dot"></span>
+        <span class="brand-name">Ajeet<span>TV</span></span>
+      </div>
+      <div class="topbar-right">
+        <span id="clock" class="clock"></span>
+        <span class="live-pill"><span class="live-dot"></span>LIVE</span>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="sidebar">
+        <div class="sidebar-title">Channels</div>
+        <div id="channelList" class="channel-list"></div>
+      </aside>
+
+      <section class="stage">
+        <div id="playerContainer" class="player-container" data-shaka-player-container>
+          <video id="video" class="player" autoplay playsinline data-shaka-player></video>
+
+          <div id="loadingOverlay" class="overlay loading-overlay hidden">
+            <div class="spinner"></div>
+            <div class="overlay-text">Loading stream…</div>
+          </div>
+
+          <div id="errorOverlay" class="overlay error-overlay hidden">
+            <div class="error-card">
+              <div class="error-title">Stream unavailable</div>
+              <div id="errorMsg" class="error-msg">Something went wrong.</div>
+              <button id="retryBtn" class="btn btn-primary">Retry</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="now-playing">
+          <div class="np-info">
+            <div id="npName" class="np-name">Select a channel</div>
+            <div id="npMeta" class="np-meta"></div>
+          </div>
+          <div class="np-actions">
+            <select id="qualitySelect" class="quality-select" title="Quality">
+              <option value="auto">Auto</option>
+            </select>
+            <button id="pipBtn" class="btn">PiP</button>
+            <button id="fsBtn" class="btn">Fullscreen</button>
+            <button id="reloadBtn" class="btn">Reload</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/shaka-player@4/dist/shaka-player.ui.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

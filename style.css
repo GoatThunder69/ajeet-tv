@@ -1,0 +1,189 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0b0e14;
+  --bg-soft: #11151f;
+  --panel: #151a26;
+  --panel-hover: #1c2333;
+  --border: #232b3d;
+  --text: #e8ecf4;
+  --text-dim: #8b93a7;
+  --accent: #e11d48;
+  --accent2: #f97316;
+  --ok: #22c55e;
+}
+
+html, body { height: 100%; }
+
+body {
+  background: radial-gradient(1200px 600px at 80% -10%, #1b2340 0%, var(--bg) 55%) fixed, var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  overflow: hidden;
+}
+
+.app { display: flex; flex-direction: column; height: 100vh; }
+
+/* ---------- Topbar ---------- */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(11, 14, 20, 0.7);
+  backdrop-filter: blur(10px);
+  z-index: 10;
+}
+
+.brand { display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 800; letter-spacing: 0.5px; }
+.brand-name span { color: var(--accent); }
+.brand-dot {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  box-shadow: 0 0 14px var(--accent);
+}
+
+.topbar-right { display: flex; align-items: center; gap: 14px; }
+.clock { color: var(--text-dim); font-variant-numeric: tabular-nums; font-size: 14px; }
+
+.live-pill {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 700; letter-spacing: 1px;
+  color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent2));
+  padding: 5px 12px; border-radius: 999px;
+}
+.live-dot { width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: pulse 1.2s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+/* ---------- Layout ---------- */
+.layout { display: flex; flex: 1; min-height: 0; }
+
+/* ---------- Sidebar ---------- */
+.sidebar {
+  width: 260px; flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  padding: 18px 14px;
+  overflow-y: auto;
+  background: rgba(17, 21, 31, 0.55);
+}
+.sidebar-title {
+  font-size: 12px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--text-dim);
+  margin-bottom: 12px; padding-left: 6px;
+}
+.channel-list { display: flex; flex-direction: column; gap: 8px; }
+
+.ch-card {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.15s, border-color 0.15s;
+  text-align: left; color: var(--text); width: 100%;
+  font: inherit;
+}
+.ch-card:hover { background: var(--panel-hover); transform: translateX(3px); }
+.ch-card.active {
+  border-color: var(--accent);
+  background: linear-gradient(135deg, rgba(225,29,72,0.18), rgba(249,115,22,0.10)), var(--panel);
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+.ch-badge {
+  width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 13px; color: #fff;
+}
+.ch-name { font-weight: 600; font-size: 15px; }
+.ch-meta { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+
+/* ---------- Stage ---------- */
+.stage { flex: 1; display: flex; flex-direction: column; min-width: 0; padding: 18px; gap: 14px; }
+
+.player-container {
+  position: relative; flex: 1; min-height: 0;
+  background: #000;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.player { width: 100%; height: 100%; }
+
+/* Overlays */
+.overlay {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 16px; background: rgba(5, 7, 12, 0.82); z-index: 5;
+}
+.overlay.hidden { display: none; }
+.overlay-text { color: var(--text-dim); font-size: 14px; }
+
+.spinner {
+  width: 46px; height: 46px; border-radius: 50%;
+  border: 3px solid var(--border); border-top-color: var(--accent);
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.error-card {
+  text-align: center; padding: 28px 36px;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
+  max-width: 420px;
+}
+.error-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+.error-msg { color: var(--text-dim); font-size: 14px; margin-bottom: 18px; word-break: break-word; }
+
+/* ---------- Now playing bar ---------- */
+.now-playing {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 14px; padding: 14px 18px;
+  flex-wrap: wrap;
+}
+.np-name { font-size: 18px; font-weight: 700; }
+.np-meta { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
+.np-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.btn {
+  padding: 9px 16px; border-radius: 10px;
+  background: var(--panel-hover); color: var(--text);
+  border: 1px solid var(--border); cursor: pointer;
+  font: inherit; font-size: 14px; font-weight: 600;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn:hover { border-color: var(--accent); }
+.btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; color: #fff; }
+
+.quality-select {
+  padding: 9px 12px; border-radius: 10px;
+  background: var(--panel-hover); color: var(--text);
+  border: 1px solid var(--border); font: inherit; font-size: 14px;
+  cursor: pointer;
+}
+
+/* ---------- Toast ---------- */
+.toast {
+  position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--panel); border: 1px solid var(--border);
+  padding: 10px 20px; border-radius: 999px; font-size: 14px;
+  opacity: 0; pointer-events: none; transition: opacity 0.25s, transform 0.25s;
+  z-index: 50;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ---------- Shaka UI tweaks ---------- */
+.shaka-video-container { background: #000; }
+.shaka-controls-button-panel { z-index: 4; }
+
+/* ---------- Mobile ---------- */
+@media (max-width: 800px) {
+  .layout { flex-direction: column; overflow-y: auto; }
+  .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); padding: 12px; }
+  .channel-list { flex-direction: row; overflow-x: auto; }
+  .ch-card { min-width: 170px; }
+  .ch-card:hover { transform: none; }
+  .stage { padding: 12px; }
+  .player-container { min-height: 240px; }
+  body { overflow: auto; }
+}
