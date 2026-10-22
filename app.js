@@ -168,6 +168,7 @@ async function initPlayer() {
 
   ui = new shaka.ui.Overlay(new shaka.Player(video), container, video);
   player = ui.getControls().getPlayer();
+  window.__player = player;
 
   player.addEventListener("error", (e) => {
     const code = e.detail && e.detail.code ? e.detail.code : "unknown";
@@ -204,6 +205,24 @@ async function initPlayer() {
         ),
         CLEARKEY_CP
       );
+
+    // JioTV ships a low-bitrate (~33 kbps) audio AdaptationSet first; Shaka
+    // picks it and audio sounds awful. Keep only the highest-bitrate audio
+    // AdaptationSet per language.
+    const audioSets = [...text.matchAll(/<AdaptationSet[^>]*contentType="audio"[\s\S]*?<\/AdaptationSet>/g)];
+    const byLang = {};
+    for (const m of audioSets) {
+      const head = m[0].slice(0, m[0].indexOf(">"));
+      const lang = (head.match(/lang="([^"]*)"/) || [])[1] || "";
+      const bw = Math.max(0, ...[...m[0].matchAll(/bandwidth="(\d+)"/g)].map((x) => +x[1]));
+      (byLang[lang] ||= []).push({ xml: m[0], bw });
+    }
+    for (const list of Object.values(byLang)) {
+      if (list.length < 2) continue;
+      const best = Math.max(...list.map((x) => x.bw));
+      for (const x of list) if (x.bw < best) text = text.replace(x.xml, "");
+    }
+
     response.data = shaka.util.StringUtils.toUTF8(text);
   });
 
