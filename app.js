@@ -119,10 +119,14 @@ async function initPlayer() {
     showError(`Playback error (${code}). Tap Retry — the stream token may have expired.`);
   });
 
-  // Append the Akamai token to every request (manifest, segments, license).
+  // Append the Akamai token to manifest/segment requests only. License
+  // requests for ClearKey are local data: URIs (synthesized by Shaka) —
+  // appending the token there corrupts them and causes error 6007.
   player.getNetworkingEngine().registerRequestFilter((type, request) => {
+    const T = shaka.net.NetworkingEngine.RequestType;
+    if (type !== T.MANIFEST && type !== T.SEGMENT) return;
     const u = request.uris[0];
-    if (u && !u.includes("__hdnea__=")) {
+    if (u && u.startsWith("http") && !u.includes("__hdnea__=")) {
       request.uris[0] = u + (u.includes("?") ? "&" : "?") + HDNEA;
     }
   });
