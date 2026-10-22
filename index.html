@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AjeetTV — Live</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shaka-player@4/dist/controls.css" />
-  <link rel="stylesheet" href="style.css?v=3" />
+  <link rel="stylesheet" href="style.css?v=8" />
 </head>
 <body>
   <div class="app">
@@ -23,6 +23,8 @@
     <main class="layout">
       <aside class="sidebar">
         <div class="sidebar-title">Channels</div>
+        <input id="searchBox" class="search-box" type="search" placeholder="Search channels…" autocomplete="off" />
+        <div id="groupChips" class="group-chips"></div>
         <div id="channelList" class="channel-list"></div>
       </aside>
 
@@ -65,6 +67,6 @@
   <div id="toast" class="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/shaka-player@4/dist/shaka-player.ui.min.js"></script>
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>

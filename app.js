@@ -69,7 +69,7 @@ async function loadConfig() {
     hdnea = cfg.hdnea;
     channels = cfg.channels.map((c, i) => {
       const d = DEFAULT_CHANNELS.find((x) => x.id === c.id) || {};
-      return { meta: "Sports · HD", color: PALETTE[i % PALETTE.length], ...d, ...c };
+      return { meta: c.group || "Sports · HD", color: PALETTE[i % PALETTE.length], ...d, ...c };
     });
   } catch (_) {}
 }
@@ -97,23 +97,59 @@ function hideError() {
 }
 
 /* ---------- Channel list ---------- */
+let filterQ = "";
+let filterGroup = "";
+const MAX_RENDER = 400;
+
+function esc(s) {
+  return String(s || "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+function renderChips() {
+  const box = $("groupChips");
+  const groups = ["", ...new Set(channels.map((c) => c.group).filter(Boolean))].sort((a, b) =>
+    a === "" ? -1 : b === "" ? 1 : a.localeCompare(b)
+  );
+  box.innerHTML = "";
+  groups.slice(0, 14).forEach((g) => {
+    const b = document.createElement("button");
+    b.className = "chip" + (g === filterGroup ? " active" : "");
+    b.textContent = g || "All";
+    b.addEventListener("click", () => { filterGroup = g; renderChips(); renderChannels(); });
+    box.appendChild(b);
+  });
+}
+
 function renderChannels() {
   const list = $("channelList");
   list.innerHTML = "";
-  channels.forEach((ch) => {
+  const q = filterQ.toLowerCase();
+  let shown = 0, total = 0;
+  for (const ch of channels) {
+    if (filterGroup && ch.group !== filterGroup) continue;
+    if (q && !ch.name.toLowerCase().includes(q)) continue;
+    total++;
+    if (shown >= MAX_RENDER) continue;
+    shown++;
     const btn = document.createElement("button");
-    btn.className = "ch-card";
+    btn.className = "ch-card" + (ch.id === (currentChannel && currentChannel.id) ? " active" : "");
     btn.dataset.id = ch.id;
-    btn.innerHTML = `
-      <span class="ch-badge" style="background:${ch.color}">${ch.name.replace("Sony ", "").slice(0, 5)}</span>
-      <span>
-        <span class="ch-name">${ch.name}</span>
-        <div class="ch-meta">${ch.meta}</div>
-      </span>`;
+    const icon = ch.logo
+      ? `<img class="ch-logo" src="${esc(ch.logo)}" loading="lazy" onerror="this.outerHTML='<span class=&quot;ch-badge&quot; style=&quot;background:${ch.color}&quot;>${esc(ch.name.slice(0, 5))}</span>'" alt="">`
+      : `<span class="ch-badge" style="background:${ch.color}">${esc(ch.name.replace("Sony ", "").slice(0, 5))}</span>`;
+    btn.innerHTML = `${icon}<span><span class="ch-name">${esc(ch.name)}</span><div class="ch-meta">${esc(ch.group || ch.meta || "")}</div></span>`;
     btn.addEventListener("click", () => playChannel(ch.id, true));
     list.appendChild(btn);
-  });
+  }
+  if (total > shown) {
+    const n = document.createElement("div");
+    n.className = "list-note";
+    n.textContent = `${total - shown} more — type to search`;
+    list.appendChild(n);
+  }
 }
+
+$("searchBox").addEventListener("input", (e) => { filterQ = e.target.value; renderChannels(); });
 
 function markActive(id) {
   document.querySelectorAll(".ch-card").forEach((el) =>
@@ -145,8 +181,9 @@ async function initPlayer() {
     const T = shaka.net.NetworkingEngine.RequestType;
     if (type !== T.MANIFEST && type !== T.SEGMENT) return;
     const u = request.uris[0];
+    const tok = (currentChannel && currentChannel.cookie) || hdnea;
     if (u && u.startsWith("http") && !u.includes("__hdnea__=")) {
-      request.uris[0] = u + (u.includes("?") ? "&" : "?") + hdnea;
+      request.uris[0] = u + (u.includes("?") ? "&" : "?") + tok;
     }
   });
 
@@ -182,7 +219,7 @@ async function playChannel(id, pushState) {
   hideError();
   showLoading(true);
   $("npName").textContent = ch.name;
-  $("npMeta").textContent = ch.meta;
+  $("npMeta").textContent = ch.group || ch.meta || "";
   document.title = `${ch.name} — AjeetTV`;
 
   if (pushState) {
@@ -269,6 +306,7 @@ setInterval(() => {
 /* ---------- Boot ---------- */
 (async () => {
   await loadConfig();
+  renderChips();
   renderChannels();
   if (!(await initPlayer())) return;
   const id = new URLSearchParams(location.search).get("id") || channels[0].id;
