@@ -2,10 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0e14" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>AjeetTV — Live</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shaka-player@4/dist/controls.css" />
-  <link rel="stylesheet" href="style.css?v=8" />
+  <link rel="stylesheet" href="style.css?v=10" />
 </head>
 <body>
   <div class="app">
@@ -21,13 +25,6 @@
     </header>
 
     <main class="layout">
-      <aside class="sidebar">
-        <div class="sidebar-title">Channels</div>
-        <input id="searchBox" class="search-box" type="search" placeholder="Search channels…" autocomplete="off" />
-        <div id="groupChips" class="group-chips"></div>
-        <div id="channelList" class="channel-list"></div>
-      </aside>
-
       <section class="stage">
         <div id="playerContainer" class="player-container" data-shaka-player-container>
           <video id="video" class="player" autoplay playsinline data-shaka-player></video>
@@ -55,12 +52,20 @@
             <select id="qualitySelect" class="quality-select" title="Quality">
               <option value="auto">Auto</option>
             </select>
-            <button id="pipBtn" class="btn">PiP</button>
-            <button id="fsBtn" class="btn">Fullscreen</button>
-            <button id="reloadBtn" class="btn">Reload</button>
+            <button id="pipBtn" class="btn" aria-label="Picture in picture">PiP</button>
+            <button id="fsBtn" class="btn" aria-label="Fullscreen">Full</button>
+            <button id="reloadBtn" class="btn" aria-label="Reload">Reload</button>
           </div>
         </div>
       </section>
+
+      <aside class="sidebar">
+        <div class="sidebar-head">
+          <input id="searchBox" class="search-box" type="search" placeholder="Search channels…" autocomplete="off" />
+          <div id="groupChips" class="group-chips"></div>
+        </div>
+        <div id="channelList" class="channel-list"></div>
+      </aside>
     </main>
   </div>
 
