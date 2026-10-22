@@ -171,19 +171,28 @@ async function initPlayer() {
   player = ui.getControls().getPlayer();
   window.__player = player;
 
-  // Live DASH tuning: sit ~15s behind the live edge (Jio manifests have a
-  // tiny minBufferTime — without this we hover at the edge and rebuffer on
-  // every hiccup), keep a real buffer cushion, and retry segment fetches.
+  // Live DASH tuning, YT-style: start at a safe bitrate and ramp up, buffer
+  // far ahead, and drop quality *before* the buffer empties rather than
+  // after. Sit ~15s behind the live edge — Jio manifests have a tiny
+  // minBufferTime, so without this we hover at the edge and rebuffer on
+  // every hiccup.
   player.configure({
     manifest: { defaultPresentationDelay: 15, dash: { ignoreMinBufferTime: true } },
     streaming: {
-      bufferingGoal: 20,
-      rebufferingGoal: 4,
+      bufferingGoal: 40,
+      rebufferingGoal: 2,
       bufferBehind: 60,
+      stallSkip: 0.1,
       jumpLargeGaps: true,
       retryParameters: { maxAttempts: 6, baseDelay: 500, backoffFactor: 1.5 },
     },
-    abr: { defaultBandwidthEstimate: 2e6, switchInterval: 6 },
+    abr: {
+      defaultBandwidthEstimate: 5e5,
+      switchInterval: 4,
+      bandwidthDowngradeTarget: 0.95,
+      bandwidthUpgradeTarget: 0.65,
+      restrictions: { maxHeight: Math.ceil(screen.height * devicePixelRatio) },
+    },
   });
 
   player.addEventListener("error", (e) => {
