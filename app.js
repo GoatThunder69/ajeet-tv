@@ -127,6 +127,26 @@ async function initPlayer() {
     }
   });
 
+  // The MPD only advertises Widevine, so browsers with a Widevine CDM pick it
+  // and die with 6007 (no license server). Rewrite the manifest to declare
+  // ClearKey instead so the locally-configured clearKeys are used.
+  const WIDEVINE_UUID = "edef8ba9-79d6-4ace-a3c8-27dcd51d21ed";
+  const CLEARKEY_CP =
+    '<ContentProtection schemeIdUri="urn:uuid:e2719d58-a985-b3c9-781a-b030af78d30e"/>';
+  player.getNetworkingEngine().registerResponseFilter((type, response) => {
+    if (type !== shaka.net.NetworkingEngine.RequestType.MANIFEST) return;
+    let text = shaka.util.StringUtils.fromUTF8(response.data);
+    text = text
+      .replace(
+        new RegExp(
+          `<ContentProtection[^>]*${WIDEVINE_UUID}[^>]*/>|<ContentProtection[^>]*${WIDEVINE_UUID}[^>]*>[\\s\\S]*?</ContentProtection>`,
+          "gi"
+        ),
+        CLEARKEY_CP
+      );
+    response.data = shaka.util.StringUtils.toUTF8(text);
+  });
+
   return true;
 }
 
