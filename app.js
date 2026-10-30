@@ -57,8 +57,27 @@ let player = null;
 let ui = null;
 let currentChannel = null;
 let toastTimer = null;
+let recoverTimer = null;
+let recoverCount = 0;
 let errorRetries = 0;
+const MAX_RECOVER = 8;
 
+// Auto-heal: on failure, pull a fresh token/config and retry the channel.
+// Covers token rotation mid-stream and transient CDN rejections.
+function scheduleRecover() {
+  if (recoverTimer) return;
+  if (recoverCount >= MAX_RECOVER) {
+    showError("Stream keeps failing — the upstream source may be down. Try again later.");
+    return;
+  }
+  const delay = Math.min(30000, 4000 * ++recoverCount);
+  toast("Refreshing stream auth…");
+  recoverTimer = setTimeout(async () => {
+    recoverTimer = null;
+    await loadConfig();
+    if (currentChannel) playChannel(currentChannel.id, false);
+  }, delay);
+}
 // Pull fresh token/keys written by the cron scraper. Falls back to the
 // embedded config above if the file is missing or stale.
 async function loadConfig() {
@@ -223,7 +242,8 @@ async function initPlayer() {
       return;
     }
     const code = d.code || "unknown";
-    showError(`Playback error (${code}). Tap Retry — the stream token may have expired.`);
+    scheduleRecover();
+    showError(`Playback error (${code}) — retrying automatically…`);
   });
 
   // Append the Akamai token to manifest/segment requests only. License
@@ -325,11 +345,13 @@ async function playChannel(id, pushState) {
 
   try {
     await player.load(ch.url);
+    recoverCount = 0;
     showLoading(false);
     populateQuality();
     toast(`${ch.name} playing`);
   } catch (err) {
-    showError(`Failed to load ${ch.name} (error ${err.code || "unknown"}).`);
+    scheduleRecover();
+    showError(`Failed to load ${ch.name} (error ${err.code || "unknown"}) — retrying…`);
   }
 }
 
