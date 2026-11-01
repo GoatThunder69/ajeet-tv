@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://jiotvmblive.cdn.jio.com" crossorigin />
   <link rel="dns-prefetch" href="https://jiotvmblive.cdn.jio.com" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shaka-player@4/dist/controls.css" />
-  <link rel="stylesheet" href="style.css?v=13" />
+  <link rel="stylesheet" href="style.css?v=14" />
 </head>
 <body>
   <div class="app">
@@ -33,7 +33,7 @@
           <video id="video" class="player" autoplay playsinline data-shaka-player></video>
 
           <div id="loadingOverlay" class="overlay loading-overlay hidden">
-            <div class="spinner"></div>
+            <div class="eq"><i></i><i></i><i></i><i></i><i></i></div>
             <div class="overlay-text">Loading stream…</div>
           </div>
 
@@ -72,9 +72,9 @@
     </main>
   </div>
 
-  <div id="toast" class="toast"></div>
+  <div id="toast" class="toast"><span id="toastText"></span><span class="fuse"><i id="toastFuse"></i></span></div>
 
   <script src="https://cdn.jsdelivr.net/npm/shaka-player@4/dist/shaka-player.ui.min.js"></script>
-  <script src="app.js?v=13"></script>
+  <script src="app.js?v=14"></script>
 </body>
 </html>

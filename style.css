@@ -11,6 +11,9 @@
   --accent: #e11d48;
   --accent2: #f97316;
   --ok: #22c55e;
+  /* micro-interaction springs */
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --spring-hard: cubic-bezier(0.5, 1.8, 0.4, 0.8);
 }
 
 html { height: 100%; }
@@ -84,7 +87,8 @@ body {
   font: inherit; font-size: 13px; font-weight: 600;
   touch-action: manipulation;
 }
-.btn:active { background: var(--accent); border-color: var(--accent); }
+.btn { transition: transform 0.15s var(--spring), background 0.15s, border-color 0.15s; }
+.btn:active { background: var(--accent); border-color: var(--accent); transform: scale(0.92); }
 .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; color: #fff; }
 
 .quality-select {
@@ -125,8 +129,16 @@ body {
   background: var(--panel); border: 1px solid var(--border);
   color: var(--text-dim); font: inherit; font-size: 13px; font-weight: 600;
   touch-action: manipulation;
+  transition: transform 0.18s var(--spring), background 0.2s, border-color 0.2s, color 0.2s;
 }
-.chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.chip:active { transform: scale(0.9); }
+.chip.active { background: var(--accent); border-color: var(--accent); color: #fff; animation: jelly 0.45s var(--spring-hard); }
+@keyframes jelly {
+  0% { transform: scale(0.7, 1.2); }
+  40% { transform: scale(1.15, 0.85); }
+  70% { transform: scale(0.95, 1.05); }
+  100% { transform: scale(1); }
+}
 
 .channel-list {
   flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
@@ -147,7 +159,15 @@ body {
   font: inherit; min-width: 0;
   touch-action: manipulation;
 }
-.ch-card:active { transform: scale(0.97); }
+.ch-card {
+  transition: transform 0.18s var(--spring), background 0.15s, border-color 0.15s;
+  animation: cardIn 0.35s var(--spring) backwards;
+}
+.ch-card:active { transform: scale(0.94); }
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
 .ch-card.active {
   border-color: var(--accent);
   background: linear-gradient(135deg, rgba(225,29,72,0.20), rgba(249,115,22,0.08)), var(--panel);
@@ -177,6 +197,20 @@ body {
   animation: spin 0.8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* lattice loader — equalizer bars behind the spinner text */
+.eq { display: flex; gap: 5px; align-items: flex-end; height: 34px; }
+.eq i {
+  width: 6px; border-radius: 3px;
+  background: linear-gradient(180deg, var(--accent), var(--accent2));
+  animation: eq 1s ease-in-out infinite;
+}
+.eq i:nth-child(1) { animation-delay: 0s; }
+.eq i:nth-child(2) { animation-delay: 0.12s; }
+.eq i:nth-child(3) { animation-delay: 0.24s; }
+.eq i:nth-child(4) { animation-delay: 0.36s; }
+.eq i:nth-child(5) { animation-delay: 0.48s; }
+@keyframes eq { 0%,100% { height: 8px; opacity: .5; } 50% { height: 34px; opacity: 1; } }
 .error-card {
   text-align: center; padding: 24px 28px; margin: 0 16px;
   background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
@@ -188,13 +222,26 @@ body {
 /* ---------- Toast ---------- */
 .toast {
   position: fixed; bottom: calc(22px + env(safe-area-inset-bottom)); left: 50%;
-  transform: translateX(-50%) translateY(20px);
+  transform: translateX(-50%) translateY(24px) scale(0.9);
   background: var(--panel); border: 1px solid var(--border);
-  padding: 10px 20px; border-radius: 999px; font-size: 14px;
-  opacity: 0; pointer-events: none; transition: opacity 0.25s, transform 0.25s;
+  padding: 10px 20px 12px; border-radius: 999px; font-size: 14px;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s, transform 0.35s var(--spring);
   z-index: 50; white-space: nowrap; max-width: 90vw; overflow: hidden; text-overflow: ellipsis;
+  cursor: pointer;
 }
-.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); pointer-events: auto; }
+.toast .fuse {
+  position: absolute; left: 16px; right: 16px; bottom: 5px; height: 2px;
+  border-radius: 2px; background: var(--border); overflow: hidden;
+}
+.toast .fuse i {
+  display: block; height: 100%; width: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  transform-origin: left;
+  animation: fuseburn linear forwards;
+}
+@keyframes fuseburn { from { transform: scaleX(1); } to { transform: scaleX(0); } }
 
 /* ---------- Shaka UI mobile tweaks ---------- */
 .shaka-video-container { background: #000; }

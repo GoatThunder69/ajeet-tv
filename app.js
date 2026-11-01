@@ -110,11 +110,19 @@ async function loadConfig() {
 
 function toast(msg, ms = 2500) {
   const t = $("toast");
-  t.textContent = msg;
+  $("toastText").textContent = msg;
+  const fuse = $("toastFuse");
+  fuse.style.animation = "none";
+  void fuse.offsetWidth;
+  fuse.style.animation = `fuseburn ${ms}ms linear forwards`;
   t.classList.add("show");
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove("show"), ms);
 }
+$("toast").addEventListener("click", () => {
+  $("toast").classList.remove("show");
+  clearTimeout(toastTimer);
+});
 
 function showLoading(on) {
   $("loadingOverlay").classList.toggle("hidden", !on);
