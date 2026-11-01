@@ -52,7 +52,7 @@ const video = $("video");
 const container = $("playerContainer");
 
 const PALETTE = ["#7c3aed", "#2563eb", "#0891b2", "#dc2626", "#d97706", "#059669"];
-let channels = DEFAULT_CHANNELS;
+let channels = prepare(DEFAULT_CHANNELS);
 let player = null;
 let ui = null;
 let currentChannel = null;
@@ -78,6 +78,23 @@ function scheduleRecover() {
     if (currentChannel) playChannel(currentChannel.id, false);
   }, delay);
 }
+// All stream traffic goes through our /tv/<host>/... proxy (nginx strips
+// Origin/Referer upstream — the CDN 403s on both). needAuth marks channels
+// that take the shared hdnea or their own cookie.
+function prepare(list) {
+  return list.map((c, i) => {
+    let host = "", path = c.url;
+    try {
+      const u = new URL(c.url);
+      host = u.hostname;
+      path = "/tv/" + host + u.pathname + u.search;
+    } catch (_) {}
+    const needAuth = /cdn\.jio\.com$/.test(host) || !!c.cookie;
+    const d = DEFAULT_CHANNELS.find((x) => x.id === c.id) || {};
+    return { meta: c.group || "Sports · HD", color: PALETTE[i % PALETTE.length], ...d, ...c, url: path, needAuth };
+  });
+}
+
 // Pull fresh token/keys written by the cron scraper. Falls back to the
 // embedded config above if the file is missing or stale.
 async function loadConfig() {
@@ -87,10 +104,7 @@ async function loadConfig() {
     const cfg = await r.json();
     if (!cfg.hdnea || !Array.isArray(cfg.channels) || !cfg.channels.length) return;
     hdnea = cfg.hdnea;
-    channels = cfg.channels.map((c, i) => {
-      const d = DEFAULT_CHANNELS.find((x) => x.id === c.id) || {};
-      return { meta: c.group || "Sports · HD", color: PALETTE[i % PALETTE.length], ...d, ...c };
-    });
+    channels = prepare(cfg.channels);
   } catch (_) {}
 }
 
@@ -253,8 +267,9 @@ async function initPlayer() {
     const T = shaka.net.NetworkingEngine.RequestType;
     if (type !== T.MANIFEST && type !== T.SEGMENT) return;
     const u = request.uris[0];
-    const tok = (currentChannel && currentChannel.cookie) || hdnea;
-    if (u && u.startsWith("http") && !u.includes("__hdnea__=")) {
+    const ch = currentChannel;
+    const tok = ch ? (ch.cookie || (ch.needAuth ? hdnea : null)) : null;
+    if (tok && u && !u.includes("__hdnea__=")) {
       request.uris[0] = u + (u.includes("?") ? "&" : "?") + tok;
     }
   });

@@ -24,11 +24,20 @@ def log(msg):
 
 
 def manifest_ok(url, tok):
-    req = urllib.request.Request(url + "?" + tok)
-    # no Referer header on purpose
+    # Test through the public proxy path (same thing browsers hit).
+    try:
+        from urllib.parse import urlparse
+        u = urlparse(url)
+        proxied = "https://ajeet.ai-fn.com/tv/" + u.hostname + u.path + "?" + tok
+    except Exception:
+        proxied = url + "?" + tok
+    req = urllib.request.Request(proxied, headers={
+        "User-Agent": "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/124.0 Safari/537.36"
+    })
     try:
         with urllib.request.urlopen(req, timeout=15) as r:
-            return r.status == 200 and b"<MPD" in r.read(4096)
+            body = r.read(8192)
+            return r.status == 200 and (b"<MPD" in body or body.lstrip().startswith(b"#EXTM3U"))
     except Exception:
         return False
 
