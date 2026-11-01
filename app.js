@@ -168,9 +168,10 @@ function renderChannels() {
     const btn = document.createElement("button");
     btn.className = "ch-card" + (ch.id === (currentChannel && currentChannel.id) ? " active" : "");
     btn.dataset.id = ch.id;
+    const badge = `<span class="ch-badge" style="background:${ch.color}">${esc(ch.name.replace("Sony ", "").slice(0, 5))}</span>`;
     const icon = ch.logo
-      ? `<img class="ch-logo" src="${esc(ch.logo)}" loading="lazy" onerror="this.outerHTML='<span class=&quot;ch-badge&quot; style=&quot;background:${ch.color}&quot;>${esc(ch.name.slice(0, 5))}</span>'" alt="">`
-      : `<span class="ch-badge" style="background:${ch.color}">${esc(ch.name.replace("Sony ", "").slice(0, 5))}</span>`;
+      ? `<img class="ch-logo" src="${esc(ch.logo)}" loading="lazy" data-f="${esc(badge)}" onerror="this.outerHTML=this.dataset.f" alt="">`
+      : badge;
     btn.innerHTML = `${icon}<span><span class="ch-name">${esc(ch.name)}</span><div class="ch-meta">${esc(ch.group || ch.meta || "")}</div></span>`;
     btn.addEventListener("click", () => playChannel(ch.id, true));
     list.appendChild(btn);
